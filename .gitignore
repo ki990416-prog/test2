@@ -1,0 +1,12 @@
+# 인증키가 들어갈 수 있는 파일은 절대 올리지 않는다
+.env
+.env.*
+!.env.example
+
+# Vercel / Node
+.vercel
+node_modules
+
+# 1단계에서 쓰던 파일 데이터와 사진 (2단계는 API를 쓰므로 올리지 않는다)
+*.csv
+*.jpg

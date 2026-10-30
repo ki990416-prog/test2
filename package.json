@@ -1,0 +1,9 @@
+{
+  "name": "jeju-memory-road",
+  "private": true,
+  "version": "2.0.0",
+  "description": "제주 역사문화 다크 투어리즘 - 공공데이터포털 API 버전",
+  "scripts": {
+    "dev": "node dev-server.mjs"
+  }
+}

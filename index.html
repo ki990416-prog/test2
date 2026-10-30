@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<title>기억의 길 · 제주 다크 투어리즘</title>
+<style>
+:root{--bg:#0f1216;--card:#181d24;--card2:#1f252d;--line:#2b333d;--ink:#e8e6e1;--sub:#9aa4af;--mut:#6f7a86;--acc:#d8b86a}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+header{padding:34px 0 22px;border-bottom:1px solid var(--line);background:linear-gradient(#171c23,#0f1216)}
+header h1{margin:0 0 6px;font-size:1.9rem;letter-spacing:-.5px}
+header h1 span{color:var(--acc)}
+header p{margin:0;color:var(--sub);max-width:720px}
+.seg{font:inherit;padding:9px 16px;border:1px solid var(--line);background:var(--card);color:var(--sub);cursor:pointer}
+.seg:first-child{border-radius:8px 0 0 8px}.seg:last-child{border-radius:0 8px 8px 0;border-left:none}
+.seg.on{background:var(--acc);color:#1a1405;border-color:var(--acc);font-weight:700}
+.modes{margin-top:18px}
+details.care{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:10px 16px;margin:18px 0 14px}
+details.care summary{cursor:pointer;font-weight:700;color:var(--acc)}
+details.care ul{margin:8px 0 2px;padding-left:20px;color:#cfcac0;font-size:.92rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 14px}
+.search{display:flex;gap:8px}
+input,select,button{font:inherit;color:var(--ink)}
+input[type=search]{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#11151a}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#11151a}
+button{cursor:pointer}
+.btn{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card2)}
+.btn:hover{background:#27303a}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.chip{padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--sub);font-size:.88rem}
+.chip.on{color:#111;font-weight:700}
+.chip:hover{border-color:var(--sub)}
+#map{height:460px;border-radius:12px;border:1px solid var(--line);z-index:0;background:#1a2027}
+.leaflet-tile-pane{filter:brightness(.6) contrast(1.15) saturate(.55)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--sub);margin:8px 0 14px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.pin{display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.7)}
+.pin::after{content:"";position:absolute;left:6px;top:6px;width:6px;height:6px;border-radius:50%;background:#fff}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--card2);color:var(--ink)}
+.leaflet-popup-content{margin:12px 14px}
+.pop{max-width:250px}.pop b{font-size:1rem}
+.pop p{margin:5px 0;font-size:.84rem;color:#cfcac0;line-height:1.5}
+.pop .row{display:flex;gap:6px;margin-top:6px}
+.pop button{padding:5px 10px;font-size:.84rem;border:1px solid var(--line);border-radius:8px;background:var(--acc);color:#1a1405}
+.pop button.pfav{background:transparent;color:#f1a6bf;border-color:#a45b78}
+.pop button.pfav.on{background:#c64c7c;color:#fff;border-color:#c64c7c}
+.badge{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--acc);color:#1a1405;font-weight:700;font-size:.75rem;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.6)}
+.arrow{color:var(--acc);font-size:14px;line-height:14px;text-align:center;text-shadow:0 0 3px #000}
+.course{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:0 0 16px}
+.course h2{margin:0 0 6px;font-size:1.1rem}
+.hint{margin:0;font-size:.88rem;color:var(--sub)}
+.course ol{list-style:none;margin:8px 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
+.course li{display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:.9rem}
+.course li .n{flex:none;width:22px;height:22px;border-radius:50%;background:var(--acc);color:#1a1405;font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center}
+.course li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.course li button{padding:1px 7px;font-size:.8rem;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--sub)}
+.course .sum{font-size:.9rem;margin:6px 0 8px;color:#cfcac0}
+.course .acts{display:flex;gap:8px;flex-wrap:wrap}
+.info{display:flex;justify-content:space-between;margin:0 0 10px;font-size:.9rem;color:var(--sub)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px;padding-bottom:24px}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-top:3px solid var(--c,#6b7480);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;transition:transform .12s,border-color .12s}
+.card:hover{transform:translateY(-2px);border-color:var(--c,#6b7480)}
+.card h2{margin:0;font-size:1.08rem;padding-right:70px}
+.card .t{font-weight:600;color:var(--acc);font-size:.9rem}
+.card .ex{font-size:.88rem;color:#c9c4b9;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.card .ex.q{font-style:italic}
+.card .ad{font-size:.8rem;color:var(--mut)}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:.74rem;padding:2px 9px;border-radius:999px;background:#262d36;color:var(--sub)}
+.fav{position:absolute;top:12px;right:12px;padding:3px 10px;font-size:.8rem;border-radius:999px;border:1px solid #a45b78;background:transparent;color:#f1a6bf}
+.fav.on{background:#c64c7c;color:#fff;border-color:#c64c7c}
+mark{background:#7a6420;color:#fff;padding:0 1px;border-radius:2px}
+.empty{grid-column:1/-1;text-align:center;padding:44px 0;color:var(--sub)}
+dialog{border:1px solid var(--line);border-radius:14px;padding:0;width:min(780px,94vw);max-height:88vh;background:var(--card);color:var(--ink);box-shadow:0 12px 50px rgba(0,0,0,.7)}
+dialog::backdrop{background:rgba(0,0,0,.72)}
+.mh{position:sticky;top:0;background:var(--card);padding:16px 20px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.mh h2{margin:0;font-size:1.3rem}
+.mb{padding:14px 20px 24px;overflow:auto;max-height:calc(88vh - 90px)}
+.mb h3{margin:18px 0 4px;font-size:.95rem;color:var(--acc)}
+.mb p{margin:0;white-space:pre-line;font-size:.94rem;color:#d6d1c7}
+blockquote{margin:12px 0;padding:12px 16px;background:var(--card2);border-left:3px solid var(--c,var(--acc));border-radius:0 8px 8px 0;font-size:1rem;color:#efebe2}
+blockquote cite{display:block;margin-top:8px;font-style:normal;font-size:.8rem;color:var(--sub)}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:4px 12px;font-size:.9rem;margin-top:10px}
+.kv dt{color:var(--sub)}.kv dd{margin:0;word-break:break-all}
+.mb a{color:var(--acc)}
+.mact{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.mact .on{background:#c64c7c;border-color:#c64c7c;color:#fff}
+.kind{font-size:.74rem;padding:2px 9px;border-radius:999px;border:1px dashed var(--mut);color:var(--sub)}
+footer{color:var(--mut);font-size:.8rem;padding:6px 0 40px;line-height:1.7}
+footer a{color:var(--sub)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1><span>기억의 길</span> · 제주 다크 투어리즘</h1>
+  <p>다크 투어리즘은 아픈 역사의 현장을 찾아 기억하고 성찰하는 여행입니다. 제주 역사문화 데이터 120곳 가운데, 설명에 그 역사가 직접 담긴 14곳을 골라 지도와 함께 정리했어요.</p>
+  <div class="modes" id="modes"></div>
+</div></header>
+
+<main class="wrap">
+  <details class="care" open>
+    <summary>찾아가기 전, 마음가짐</summary>
+    <ul>
+      <li>추모와 기억의 공간입니다. 조용히 걷고, 큰 소리와 장난스러운 사진은 삼가 주세요.</li>
+      <li>묘역과 유적은 오르거나 만지지 말고, 출입이 제한된 곳에는 들어가지 마세요.</li>
+      <li>유족이나 주민이 계시면 촬영 전에 양해를 구하세요.</li>
+      <li>이 사이트는 공공데이터(2022-12-09 기준)를 정리한 것이라, 방문 전 현재 개방 여부를 확인해 주세요.</li>
+    </ul>
+  </details>
+
+  <section class="panel" aria-label="검색 및 필터">
+    <div class="search">
+      <input id="q" type="search" placeholder="장소명, 제목, 주소, 내용으로 검색 (예: 일본군, 4.3, 도굴)" autocomplete="off">
+      <button id="reset" class="btn" type="button">초기화</button>
+    </div>
+    <div class="filters">
+      <div id="chips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <select id="region" aria-label="지역"></select>
+      <select id="cat" aria-label="분류"></select>
+      <select id="d1" aria-label="세부 분류"></select>
+      <select id="sort" aria-label="정렬">
+        <option value="curated">기억의 길 순서</option>
+        <option value="name">장소명 가나다순</option>
+      </select>
+    </div>
+  </section>
+
+  <section aria-label="지도">
+    <div id="map"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="course" aria-label="나의 추모 코스">
+    <h2>나의 추모 코스</h2>
+    <div id="course"></div>
+  </section>
+
+  <div class="info"><span id="count"></span><span>카드를 누르면 기록 전문이 열립니다</span></div>
+  <section class="grid" id="grid" aria-live="polite"><div class="empty">데이터를 불러오는 중…</div></section>
+</main>
+
+<div class="wrap"><footer>
+  <p><b>고른 기준</b> · 일반정보의 설명에 해당 사건이나 유적이 직접 나온 곳만 골랐어요. 장소명과 설명이 따로 놀거나 지나가듯 한 번 언급된 곳은 제외했습니다. <span class="kind">기록 속 장소</span>는 마을지·조사서 같은 자료에 그 역사가 언급된 곳이고, 그 자리가 바로 현장이라는 뜻은 아닙니다.</p>
+  <p>이 화면의 데이터는 방문할 때마다 공공데이터포털 API에서 받아옵니다. 원자료는 쉼표가 마침표로 저장되어 있어 기록 문장도 원문 그대로 표시합니다.</p>
+  <p>출처: 제주특별자치도 제주역사문화 일반정보·위치정보(공공데이터포털 오픈API로 조회, 2022-12-09 기준) · 지도 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자, Esri</p>
+</footer></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<dialog id="dlg"><div class="mh"><div><h2 id="dt"></h2><div id="dtags" class="tags" style="margin-top:6px"></div></div><button id="close" class="btn" type="button" aria-label="닫기">닫기 ✕</button></div><div class="mb" id="db"></div></dialog>
+
+<script>
+// 데이터는 파일이 아니라 서버의 /api/places 에서 받아온다. (공공데이터포털 API 2개를 서버가 호출해 합쳐 준다)
+// 어떤 곳을 '기억의 길'로 보여줄지는 화면에서 정한다: needle 문장이 설명 원문에 실제로 있을 때만 포함한다.
+const DARK = [
+  { id: 941,  themes: ['mass'],        kind: '현장', needle: '지난 40년간' },
+  { id: 2480, themes: ['mass', 'war'], kind: '현장', needle: '예비검속자 252명이 집단 학살되는 비극의 장소' },
+  { id: 704,  themes: ['mass'],        kind: '기록', needle: '4.3사건으로 인하여 마을의 사고각인 호적궤가 황망 중에 소실되어' },
+  { id: 3717, themes: ['mass'],        kind: '기록', needle: '제주의 아픈역사인 4.3사건 역시 기록되어 있다' },
+  { id: 600,  themes: ['mass', 'war'], kind: '기록', needle: '한라산과 4.3의 5개 분야' },
+  { id: 2460, themes: ['war'],         kind: '현장', needle: '제주도민을 강제로 부역시켜 만든 곳이다' },
+  { id: 2470, themes: ['war'],         kind: '현장', needle: '제주도민을 강제로 부역시켜 만든 곳이다' },
+  { id: 3778, themes: ['war'],         kind: '현장', needle: '모슬포 비행장에 강제노역 당하던' },
+  { id: 2436, themes: ['resist'],      kind: '현장', needle: '삼별초가 최후까지 항쟁하다 전원이 순직한' },
+  { id: 4023, themes: ['resist'],      kind: '기록', needle: '항일단체를 결사하여 독립운동에 앞장서기도 하였습니다' },
+  { id: 3773, themes: ['resist'],      kind: '현장', needle: '사약을 받고 죽은 충암 김정의 넋을 기리기 위해' },
+  { id: 427,  themes: ['tomb'],        kind: '현장', needle: '일인들에 의해 처음 도굴되었고' },
+  { id: 433,  themes: ['tomb'],        kind: '현장', needle: '일본인들에 의해 묘가 도굴된 바 있어' },
+  { id: 428,  themes: ['tomb'],        kind: '현장', needle: '영원히 파괴되었을지도 모를' }
+];
+
+const squash = s => String(s).replace(/\s+/g, ' ').trim();
+
+function extractQuote(text, needle) {
+  const i = text.indexOf(needle);
+  if (i < 0) return null;
+  let start = text.lastIndexOf('다. ', i);
+  start = start >= 0 ? start + 3 : 0;
+  let end = text.indexOf('다.', i + needle.length - 1);
+  end = end >= 0 ? end + 2 : Math.min(text.length, i + needle.length + 120);
+  let q = text.slice(start, end).trim();
+  if (q.length > 280) {
+    const s2 = Math.max(start, i - 90);
+    q = (s2 > start ? '…' : '') + text.slice(s2, end).trim();
+  }
+  return q.length > 300 ? q.slice(0, 300) + '…' : q;
+}
+
+function addDark(rows) {
+  DARK.forEach((d, order) => {
+    const r = rows.find(x => x.id === d.id);
+    if (!r) return;
+    const body = squash(r.body);
+    const quote = extractQuote(body.includes(d.needle) ? body : squash(r.abs), d.needle);
+    if (!quote) return;
+    r.dark = { themes: d.themes, kind: d.kind, order, quote, src: [r.author, '「' + r.title + '」', r.date].filter(Boolean).join(' · ') };
+  });
+  return rows;
+}
+
+async function loadPlaces() {
+  if (location.protocol === 'file:') {
+    throw new Error('이 화면은 파일을 더블클릭해서 열 수 없어요. Vercel 주소(또는 node dev-server.mjs 로 띄운 http://localhost:3000)에서 열어 주세요.');
+  }
+  let res;
+  try { res = await fetch('/api/places'); } catch (e) { throw new Error('서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); }
+  let json = null;
+  try { json = await res.json(); } catch (e) {}
+  if (!res.ok || !json || !Array.isArray(json.places)) {
+    throw new Error((json && json.message) || '데이터를 불러오지 못했어요 (HTTP ' + res.status + ').');
+  }
+  return addDark(json.places);
+}
+
+loadPlaces().then(start).catch(e => {
+  document.querySelectorAll('main > .panel, main > section[aria-label="지도"], main > .course, main > .info, details.care').forEach(el => { el.style.display = 'none'; });
+  document.getElementById('grid').innerHTML = '';
+  const box = document.createElement('div');
+  box.className = 'empty';
+  box.setAttribute('role', 'alert');
+  box.textContent = e.message;
+  document.getElementById('grid').appendChild(box);
+  document.getElementById('count').textContent = '데이터를 불러오지 못했어요';
+});
+
+function start(DATA) {
+
+const THEMES = {
+  mass:   { label: '4·3과 근현대의 상처', color: '#e0605a' },
+  war:    { label: '일제강점기 전쟁의 흔적', color: '#e8a04f' },
+  resist: { label: '항쟁과 유배', color: '#7aa0ea' },
+  tomb:   { label: '무덤과 훼손의 기록', color: '#b499ea' }
+};
+const OTHER = '#6f7a86';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const regexEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const byId = id => DATA.find(d => d.id === id);
+const colorOf = d => (d.dark ? THEMES[d.dark.themes[0]].color : OTHER);
+const DARK_N = DATA.filter(d => d.dark).length;
+const state = { mode: 'dark', q: '', region: '', theme: '', cat: '', d1: '', sort: 'curated' };
+
+let map = null, courseLayer = null;
+const markers = new Map();
+
+let fav = [];
+try { fav = JSON.parse(localStorage.getItem('jejuDarkCourse') || '[]'); } catch (e) { fav = []; }
+fav = fav.filter(id => byId(id));
+const saveFav = () => { try { localStorage.setItem('jejuDarkCourse', JSON.stringify(fav)); } catch (e) {} };
+
+function hl(text, q) {
+  const t = esc(text);
+  if (!q) return t;
+  return t.replace(new RegExp('(' + regexEsc(esc(q)) + ')', 'gi'), '<mark>$1</mark>');
+}
+
+function themeTags(d) {
+  if (!d.dark) return '';
+  return d.dark.themes.map(k => '<span class="tag" style="background:' + THEMES[k].color + '26;color:' + THEMES[k].color + '">' + esc(THEMES[k].label) + '</span>').join('') +
+    (d.dark.kind === '기록' ? '<span class="kind">기록 속 장소</span>' : '');
+}
+
+function fillSelect(el, label, values) {
+  const counts = {};
+  values.forEach(v => { if (v) counts[v] = (counts[v] || 0) + 1; });
+  el.innerHTML = '<option value="">' + label + ' 전체</option>' +
+    Object.keys(counts).sort((a, b) => a.localeCompare(b, 'ko')).map(k => '<option value="' + esc(k) + '">' + esc(k) + ' (' + counts[k] + ')</option>').join('');
+}
+
+function renderModes() {
+  $('modes').innerHTML =
+    '<button class="seg' + (state.mode === 'dark' ? ' on' : '') + '" data-mode="dark" type="button">기억의 길 (' + DARK_N + '곳)</button>' +
+    '<button class="seg' + (state.mode === 'all' ? ' on' : '') + '" data-mode="all" type="button">전체 자료 (' + DATA.length + '곳)</button>';
+  const dark = state.mode === 'dark';
+  $('chips').style.display = dark ? 'flex' : 'none';
+  $('cat').style.display = dark ? 'none' : '';
+  $('d1').style.display = dark ? 'none' : '';
+  const base = dark ? DATA.filter(d => d.dark) : DATA;
+  $('chips').innerHTML =
+    '<button type="button" class="chip' + (!state.theme ? ' on' : '') + '" style="' + (!state.theme ? 'background:#d8b86a' : '') + '" data-theme="">전체 ' + base.length + '</button>' +
+    Object.keys(THEMES).map(k => {
+      const n = DATA.filter(d => d.dark && d.dark.themes.includes(k)).length;
+      const on = state.theme === k;
+      return '<button type="button" class="chip' + (on ? ' on' : '') + '" style="' + (on ? 'background:' + THEMES[k].color + ';border-color:' + THEMES[k].color : 'border-color:' + THEMES[k].color + '66') + '" data-theme="' + k + '">' + esc(THEMES[k].label) + ' ' + n + '</button>';
+    }).join('');
+  $('legend').innerHTML = Object.keys(THEMES).map(k => '<span><i style="background:' + THEMES[k].color + '"></i>' + esc(THEMES[k].label) + '</span>').join('') +
+    (dark ? '' : '<span><i style="background:' + OTHER + '"></i>그 밖의 자료</span>');
+}
+
+function filtered() {
+  const q = state.q.trim().toLowerCase();
+  let rows = DATA.filter(d =>
+    (state.mode === 'all' || d.dark) &&
+    (!state.theme || (d.dark && d.dark.themes.includes(state.theme))) &&
+    (!state.region || d.region === state.region) &&
+    (!state.cat || d.cat === state.cat) &&
+    (!state.d1 || d.d1 === state.d1) &&
+    (!q || [d.name, d.title, d.sub, d.addr, d.body, d.topic, d.d1, d.d2, d.dark ? d.dark.quote : ''].join(' ').toLowerCase().includes(q))
+  );
+  rows.sort(state.sort === 'name'
+    ? (a, b) => a.name.localeCompare(b.name, 'ko')
+    : (a, b) => (a.dark ? a.dark.order : 999) - (b.dark ? b.dark.order : 999) || a.id - b.id);
+  return rows;
+}
+
+function favBtn(id) {
+  const i = fav.indexOf(id);
+  return '<button class="fav' + (i >= 0 ? ' on' : '') + '" type="button" data-fav="' + id + '" aria-label="찜하기">' + (i >= 0 ? '♥ ' + (i + 1) + '번' : '♡ 찜') + '</button>';
+}
+
+function render(fit = true) {
+  const rows = filtered();
+  updateMap(rows, fit);
+  $('count').textContent = '총 ' + (state.mode === 'dark' ? DARK_N : DATA.length) + '곳 중 ' + rows.length + '곳';
+  $('grid').innerHTML = rows.length ? rows.map(d =>
+    '<div class="card" role="button" tabindex="0" data-id="' + d.id + '" style="--c:' + colorOf(d) + '">' + favBtn(d.id) +
+      '<h2>' + hl(d.name, state.q) + '</h2>' +
+      '<div class="tags">' + themeTags(d) + '<span class="tag">' + esc(d.region) + '</span></div>' +
+      '<div class="t">' + hl(d.title, state.q) + '</div>' +
+      (d.dark ? '<div class="ex q">“' + hl(d.dark.quote, state.q) + '”</div>' : '<div class="ex">' + hl(d.body, state.q) + '</div>') +
+      '<div class="ad">' + hl(d.addr, state.q) + '</div>' +
+    '</div>'
+  ).join('') : '<div class="empty">조건에 맞는 장소가 없어요. 검색어나 필터를 바꿔 보세요.</div>';
+}
+
+function popupHtml(d) {
+  const ex = d.dark ? d.dark.quote : d.body;
+  const short = ex.length > 100 ? ex.slice(0, 100) + '…' : ex;
+  return '<div class="pop"><b>' + esc(d.name) + '</b><div class="tags" style="margin:4px 0">' + themeTags(d) + '</div><p>' + (d.dark ? '“' + esc(short) + '”' : esc(short)) + '</p><p style="color:#8d97a2;font-size:.78rem">' + esc(d.addr) + '</p><div class="row"><button type="button" data-detail="' + d.id + '">자세히 보기</button><button type="button" class="pfav" data-pfav="' + d.id + '"></button></div></div>';
+}
+
+function initMap() {
+  if (typeof L === 'undefined') {
+    $('map').innerHTML = '<div class="empty" style="padding-top:150px">지도를 불러오지 못했어요.<br>인터넷 연결을 확인하고, 보안 프로그램이나 학교·회사 네트워크가 외부 사이트를 막고 있지 않은지 확인해 주세요.<br>목록과 검색은 지도 없이도 사용할 수 있어요.</div>';
+    return;
+  }
+  map = L.map('map').setView([33.38, 126.55], 10);
+  const PROVIDERS = [
+    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', opt: { maxZoom: 18, attribution: 'Tiles © Esri' } },
+    { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', opt: { maxZoom: 18, attribution: '© OpenStreetMap contributors' } }
+  ];
+  let provider = -1, tileLayer = null, tileErrors = 0;
+  const useProvider = n => {
+    if (tileLayer) map.removeLayer(tileLayer);
+    provider = n; tileErrors = 0;
+    tileLayer = L.tileLayer(PROVIDERS[n].url, PROVIDERS[n].opt).addTo(map);
+    tileLayer.on('tileerror', () => { if (++tileErrors === 3 && provider < PROVIDERS.length - 1) useProvider(provider + 1); });
+  };
+  useProvider(0);
+  DATA.forEach(d => {
+    const icon = L.divIcon({ className: '', html: '<span class="pin" style="background:' + colorOf(d) + '"></span>', iconSize: [22, 22], iconAnchor: [11, 24], popupAnchor: [0, -24] });
+    markers.set(d.id, L.marker([d.lat, d.lng], { icon, title: d.name }).bindPopup(popupHtml(d)));
+  });
+  map.on('popupopen', e => {
+    const el = e.popup.getElement();
+    const b = el.querySelector('[data-detail]');
+    if (b) b.addEventListener('click', () => openDetail(Number(b.dataset.detail)));
+    const f = el.querySelector('[data-pfav]');
+    if (f) {
+      const id = Number(f.dataset.pfav);
+      const label = () => { const i = fav.indexOf(id); f.textContent = i < 0 ? '♡ 찜하기' : '♥ ' + (i + 1) + '번 찜'; f.classList.toggle('on', i >= 0); };
+      label();
+      f.addEventListener('click', () => { toggleFav(id); label(); });
+    }
+  });
+  courseLayer = L.layerGroup().addTo(map);
+}
+
+function updateMap(rows, fit) {
+  if (!map) return;
+  const ids = new Set(rows.map(r => r.id));
+  markers.forEach((m, id) => { if (ids.has(id)) { if (!map.hasLayer(m)) m.addTo(map); } else if (map.hasLayer(m)) map.removeLayer(m); });
+  if (fit && rows.length) map.fitBounds(L.latLngBounds(rows.map(r => [r.lat, r.lng])), { padding: [30, 30], maxZoom: 13 });
+}
+
+function showOnMap(id) {
+  const m = markers.get(id);
+  if (!m || !map) return;
+  $('dlg').close();
+  if (!map.hasLayer(m)) m.addTo(map);
+  $('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  map.setView(m.getLatLng(), 14);
+  m.openPopup();
+}
+
+function km(a, b) {
+  const R = 6371, rad = x => x * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function toggleFav(id) {
+  const i = fav.indexOf(id);
+  if (i < 0) fav.push(id); else fav.splice(i, 1);
+  saveFav(); render(false); renderCourse();
+}
+
+function moveFav(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= fav.length) return;
+  [fav[i], fav[j]] = [fav[j], fav[i]];
+  saveFav(); render(false); renderCourse();
+}
+
+function renderCourse() {
+  const pts = fav.map(byId);
+  const box = $('course');
+  if (!pts.length) {
+    box.innerHTML = '<p class="hint">카드나 지도 핀의 <b>♡ 찜</b>을 누르면, 누른 순서대로 지도에 선이 이어지는 나만의 추모 코스가 만들어져요.</p>';
+  } else {
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) total += km(pts[i - 1], pts[i]);
+    box.innerHTML =
+      '<ol>' + pts.map((d, i) =>
+        '<li><span class="n">' + (i + 1) + '</span><span class="nm" data-go="' + d.id + '" title="지도에서 보기">' + esc(d.name) + '</span>' +
+        '<button type="button" data-up="' + i + '" aria-label="위로">↑</button><button type="button" data-down="' + i + '" aria-label="아래로">↓</button><button type="button" data-rm="' + d.id + '" aria-label="빼기">✕</button></li>'
+      ).join('') + '</ol>' +
+      '<div class="sum">' + pts.length + '곳 · ' + (pts.length > 1 ? '직선거리 합계 약 ' + total.toFixed(1) + ' km' : '한 곳 더 찜하면 선이 이어져요') + '</div>' +
+      '<div class="acts"><button class="btn" type="button" id="fitCourse">코스 전체 보기</button><button class="btn" type="button" id="clearCourse">코스 비우기</button></div>';
+  }
+  if (!map) return;
+  courseLayer.clearLayers();
+  if (pts.length > 1) {
+    L.polyline(pts.map(d => [d.lat, d.lng]), { color: '#d8b86a', weight: 4, opacity: .95, interactive: false }).addTo(courseLayer);
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const ang = Math.atan2((b.lng - a.lng) * Math.cos(a.lat * Math.PI / 180), b.lat - a.lat) * 180 / Math.PI;
+      L.marker([(a.lat + b.lat) / 2, (a.lng + b.lng) / 2], { interactive: false, keyboard: false,
+        icon: L.divIcon({ className: '', html: '<div class="arrow" style="transform:rotate(' + ang.toFixed(0) + 'deg)">▲</div>', iconSize: [14, 14], iconAnchor: [7, 7] }) }).addTo(courseLayer);
+    }
+  }
+  pts.forEach((d, i) => L.marker([d.lat, d.lng], { interactive: false, keyboard: false, zIndexOffset: 1000,
+    icon: L.divIcon({ className: '', html: '<div class="badge">' + (i + 1) + '</div>', iconSize: [20, 20], iconAnchor: [-2, 38] }) }).addTo(courseLayer));
+}
+
+function row(k, v) { return v ? '<dt>' + k + '</dt><dd>' + esc(v) + '</dd>' : ''; }
+function sec(k, v) { return v ? '<h3>' + k + '</h3><p>' + esc(v) + '</p>' : ''; }
+
+function openDetail(id) {
+  const d = byId(id);
+  if (!d) return;
+  $('dt').textContent = d.name;
+  $('dtags').innerHTML = themeTags(d) + '<span class="tag">' + esc(d.cat) + ' · ' + esc(d.d1) + (d.d2 ? ' · ' + esc(d.d2) : '') + '</span><span class="tag">' + esc(d.region) + '</span>';
+  $('db').innerHTML =
+    (d.dark ? '<blockquote style="--c:' + colorOf(d) + '">“' + esc(d.dark.quote) + '”<cite>— ' + esc(d.dark.src) + '</cite></blockquote>' : '') +
+    '<p style="font-weight:600;font-size:1.05rem">' + esc(d.title) + '</p>' +
+    (d.sub ? '<p style="color:#9aa4af">' + esc(d.sub) + '</p>' : '') +
+    '<div class="mact"><button class="btn" type="button" data-map="' + d.id + '">지도에서 위치 보기</button><button class="btn" type="button" data-favd="' + d.id + '"></button></div>' +
+    '<dl class="kv">' + row('주소', d.addr) + row('우편번호', d.zip) + row('좌표', d.lat + ', ' + d.lng + ' (' + d.crs + ')') +
+      row('저작자', d.author) + row('발행자', d.publisher) + row('발행일', d.date) + row('자료유형', d.type) + row('범위', d.range) + row('출처', d.source) + row('기여자', d.contrib) + row('기준일자', d.base) + '</dl>' +
+    sec('주제', d.topic) + sec('내용', d.body) + sec('초록', d.abs) + sec('목차', d.toc) + sec('참고문헌', d.refs) +
+    (d.url ? '<h3>원본 페이지</h3><p><a href="' + esc(d.url) + '" target="_blank" rel="noopener">제주도 문화 디지털콘텐츠에서 보기 ↗</a> <span style="color:#7d8792;font-size:.8rem">(인터넷 연결 필요)</span></p>' : '');
+  const mb = $('db').querySelector('[data-map]');
+  if (mb) mb.addEventListener('click', () => showOnMap(d.id));
+  const fb = $('db').querySelector('[data-favd]');
+  const label = () => { const i = fav.indexOf(d.id); fb.textContent = i < 0 ? '♡ 코스에 찜하기' : '♥ ' + (i + 1) + '번째 코스 (누르면 빼기)'; fb.classList.toggle('on', i >= 0); };
+  label();
+  fb.addEventListener('click', () => { toggleFav(d.id); label(); });
+  $('db').scrollTop = 0;
+  $('dlg').showModal();
+}
+
+fillSelect($('region'), '지역', DATA.map(d => d.region));
+fillSelect($('cat'), '분류', DATA.map(d => d.cat));
+fillSelect($('d1'), '세부 분류', DATA.map(d => d.d1));
+
+$('q').addEventListener('input', e => { state.q = e.target.value; render(); });
+['region', 'cat', 'd1', 'sort'].forEach(k => $(k).addEventListener('change', e => { state[k] = e.target.value; render(); }));
+$('reset').addEventListener('click', () => {
+  Object.assign(state, { q: '', region: '', theme: '', cat: '', d1: '', sort: 'curated' });
+  $('q').value = ''; ['region', 'cat', 'd1'].forEach(k => $(k).value = ''); $('sort').value = 'curated';
+  renderModes(); render();
+});
+$('modes').addEventListener('click', e => {
+  const b = e.target.closest('[data-mode]');
+  if (!b) return;
+  state.mode = b.dataset.mode; state.theme = ''; state.cat = ''; state.d1 = '';
+  $('cat').value = ''; $('d1').value = '';
+  renderModes(); render();
+});
+$('chips').addEventListener('click', e => {
+  const b = e.target.closest('[data-theme]');
+  if (!b) return;
+  state.theme = b.dataset.theme;
+  renderModes(); render();
+});
+$('grid').addEventListener('click', e => {
+  const f = e.target.closest('.fav');
+  if (f) { toggleFav(Number(f.dataset.fav)); return; }
+  const c = e.target.closest('.card');
+  if (c) openDetail(Number(c.dataset.id));
+});
+$('grid').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); openDetail(Number(e.target.dataset.id)); }
+});
+$('course').addEventListener('click', e => {
+  const t = e.target;
+  if (t.dataset.up !== undefined) return moveFav(Number(t.dataset.up), -1);
+  if (t.dataset.down !== undefined) return moveFav(Number(t.dataset.down), 1);
+  if (t.dataset.rm) return toggleFav(Number(t.dataset.rm));
+  if (t.dataset.go) return showOnMap(Number(t.dataset.go));
+  if (t.id === 'clearCourse') { if (fav.length && confirm('코스를 모두 비울까요?')) { fav = []; saveFav(); render(false); renderCourse(); } return; }
+  if (t.id === 'fitCourse' && map && fav.length) {
+    $('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    map.fitBounds(L.latLngBounds(fav.map(id => [byId(id).lat, byId(id).lng])), { padding: [50, 50], maxZoom: 13 });
+  }
+});
+$('close').addEventListener('click', () => $('dlg').close());
+$('dlg').addEventListener('click', e => { if (e.target === $('dlg')) $('dlg').close(); });
+
+renderModes();
+initMap();
+render();
+renderCourse();
+
+}
+</script>
+</body>
+</html>
